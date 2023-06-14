@@ -103,6 +103,7 @@ export default {
             }
             this.rotation += angleDiff * (180 / Math.PI);
             this.prevAngle = currentAngle;
+
         }
         },
 
@@ -121,9 +122,11 @@ export default {
         let pos = (temp*(segments)) - (segments/2)
 
         this.rotation = pos
+        this.test = 0
 
         setTimeout(() => {
             circle.style.transition = '';
+            //window.navigator.vibrate(20)
         }, 700);
         },
 
