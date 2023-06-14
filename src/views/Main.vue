@@ -2,8 +2,8 @@
 
     <div class="bg-white w-screen h-screen flex items-center justify-center relative">
 
-        <div id="circle" :style="{ transform: `rotate(${rotation}deg)` }" @mousedown="startDrag" @mousemove="drag" @mouseup="endDrag" class="w-[400px] h-[400px] inset-0 rounded-full bg-transparent border-[60px] border-[#0097ff] flex items-center justify-center">
-            <canvas id="ring-text" width="400" height="400"></canvas>
+        <div id="circle" :style="{ transform: `rotate(${rotation}deg)` }" @mousedown="startDrag" @mousemove="drag" @mouseup="endDrag" @touchstart="startTouchDrag" @touchmove="dragTouch" @touchend="endTouchDrag" class="w-[700px] h-[700px] inset-0 rounded-full bg-transparent border-[60px] border-[#0097ff] flex items-center justify-center">
+            <canvas id="ring-text" width="700" height="700"></canvas>
         </div>
 
     </div>
@@ -28,7 +28,7 @@ export default {
     components: {},
     methods: {
 
-        //drag stuff
+        //pc drag stuff
         startDrag(event) {
         this.isDragging = true;
         const circle = document.getElementById('circle');
@@ -38,6 +38,7 @@ export default {
         this.prevAngle = Math.atan2(event.clientY - circleCenterY, event.clientX - circleCenterX);
         event.preventDefault();
         },
+
         drag(event) {
         if (this.isDragging) {
             const circle = document.getElementById('circle');
@@ -55,30 +56,62 @@ export default {
             this.prevAngle = currentAngle;
         }
         },
+
         endDrag() {
         this.isDragging = false;
         this.transitionToInitialPosition();
         },
+        
+
+        //touch drag stuff
+        startTouchDrag(event) {
+        this.isDragging = true;
+        const circle = document.getElementById('circle');
+        const circleRect = circle.getBoundingClientRect();
+        const circleCenterX = circleRect.left + circleRect.width / 2;
+        const circleCenterY = circleRect.top + circleRect.height / 2;
+        this.prevAngle = Math.atan2(event.touches[0].clientY - circleCenterY, event.touches[0].clientX - circleCenterX);
+        event.preventDefault();
+        },
+
+        dragTouch(event) {
+        if (this.isDragging) {
+            const circle = document.getElementById('circle');
+            const circleRect = circle.getBoundingClientRect();
+            const circleCenterX = circleRect.left + circleRect.width / 2;
+            const circleCenterY = circleRect.top + circleRect.height / 2;
+            const currentAngle = Math.atan2(event.touches[0].clientY - circleCenterY, event.touches[0].clientX - circleCenterX);
+            let angleDiff = currentAngle - this.prevAngle;
+            if (angleDiff < -Math.PI) {
+            angleDiff += 2 * Math.PI;
+            } else if (angleDiff > Math.PI) {
+            angleDiff -= 2 * Math.PI;
+            }
+            this.rotation += angleDiff * (180 / Math.PI);
+            this.prevAngle = currentAngle;
+        }
+        },
+
+        endTouchDrag() {
+        this.isDragging = false;
+        this.transitionToInitialPosition();
+        },
+
         transitionToInitialPosition() {
         const circle = document.getElementById('circle');
         circle.style.transition = 'transform 0.7s ease';
-
-
-        let temp = Math.floor((this.rotation%360)/(360/this.ring1_items_val.length))
         
-        console.log(this.rotation)
-        console.log(temp)
+        let segments = 360/this.ring1_items_val.length
+        let temp = (Math.floor(this.rotation/segments)) + 1
 
-        this.rotation = this.ring1_items_val[temp].select;
+        let pos = (temp*(segments)) - (segments/2)
+
+        this.rotation = pos
 
         setTimeout(() => {
             circle.style.transition = '';
         }, 700);
-        }
-
-
-
-
+        },
 
         
     },
@@ -92,9 +125,6 @@ export default {
             let minAng = cellDegrees*index
             let selectAng = (cellDegrees*index)+(cellDegrees/2) 
 
-            console.log(minAng)
-            console.log(selectAng)
-
             this.ring1_items_val.push({name: element, min: minAng, select: selectAng})
         });
 
@@ -102,7 +132,7 @@ export default {
         const canvas = document.getElementById("ring-text");
         const context = canvas.getContext("2d");
 
-        const radius = 166;
+        const radius = 320;
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
         const startAngle = -Math.PI / 2;
