@@ -199,6 +199,8 @@
           svg.appendChild(path);
   
           const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('font-family', 'axiforma-bold');
+          text.setAttribute('font-size', '16px');
           const textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
           textPath.setAttribute('text-anchor', 'middle');
           textPath.setAttribute('startOffset', '50%')
