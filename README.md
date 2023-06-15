@@ -2,6 +2,8 @@
 
 A mouse/touch spinning dial selecter component compatible with most modern browsers.
 
+Live demo avalible at [this link](https://liveview-b19e3.firebaseapp.com/).
+
 Can be imported as a regular vue component:
 ```
 <template>
