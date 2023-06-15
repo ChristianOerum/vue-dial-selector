@@ -1,27 +1,48 @@
 <template>
-
+    
     <div :id="this.id" :style="{ transform: `translate(-50%, -50%) rotate(${rotation}deg)`, width: this.ringDiameter + 'px', height: this.ringDiameter + 'px', borderWidth: this.ringThickness + 'px', top: '50%', left: '50%', clipPath: 'circle(50% at center)' }" @mousedown="startDrag" @mousemove="drag" @mouseup="endDrag" @touchstart="startTouchDrag" @touchmove="dragTouch" @touchend="endTouchDrag" class="absolute inset-0 rounded-full bg-transparent border-[#2A2A2A] flex items-center justify-center">
-        <canvas :id="'ring-text:'+this.id" :width="this.ringDiameter " :height="this.ringDiameter " ></canvas>
+        
+        <div>
+            <svg :id="'svgContainer' + this.id" :height="this.ringDiameter" :width="this.ringDiameter"></svg>
+        </div>
+
     </div>
 
-</template>
-
-<script>
-
-export default {
+  </template>
+  
+  <script>
+  export default {
     data() { 
         return {
             isDragging: false,
             prevAngle: 0,
             rotation: 0,
             ring1_items: this.arr,
-            ring1_items_val: []
+            ring1_items_val: [],
+            items: []
         }
     },
-    setup() {
+    mounted() {
+        
+        console.log("test")
+        console.log(this.ringDiameter)
+        console.log(this.ringThickness)
+
+        this.ring1_items.forEach((element, index) => {
+
+            let cellDegrees = 360/this.ring1_items.length
+            
+            let minAng = cellDegrees*index
+            let maxAng = cellDegrees*(index+1)
+            let selectAng = (cellDegrees*index)+(cellDegrees/2) 
+
+            this.ring1_items_val.push({name: element, min: minAng, max: maxAng, select: selectAng})
+
+        });
+
+        this.addPaths();
 
     },
-    components: {},
     props: {
         ringDiameter: {
             type: Number,
@@ -129,79 +150,68 @@ export default {
             //window.navigator.vibrate(20)
         }, 700);
         },
-
         
-    },
+        createArc(centerX, centerY, radius, startAngle, endAngle) {
+            let path
 
-    mounted(){
+            if (endAngle != 360) { 
+                const startRadians = (startAngle - 90) * (Math.PI / 180);
+                const endRadians = (endAngle - 90) * (Math.PI / 180);
+                const startX = centerX + radius * Math.cos(startRadians);
+                const startY = centerY + radius * Math.sin(startRadians);
+                const endX = centerX + radius * Math.cos(endRadians);
+                const endY = centerY + radius * Math.sin(endRadians);
 
-        console.log("test")
-        console.log(this.ringDiameter)
-        console.log(this.ringThickness)
+                const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
 
-        this.ring1_items.forEach((element, index) => {
+                path = `M${startX},${startY} A${radius},${radius} 0 ${largeArcFlag},1 ${endX},${endY}`;
+            }
 
-            let cellDegrees = 360/this.ring1_items.length
-            
-            let minAng = cellDegrees*index
-            let selectAng = (cellDegrees*index)+(cellDegrees/2) 
+            else {
+                endAngle = 359.99
 
-            this.ring1_items_val.push({name: element, min: minAng, select: selectAng})
+                const startRadians = (startAngle - 90) * (Math.PI / 180);
+                const endRadians = (endAngle - 90) * (Math.PI / 180);
+                const startX = centerX + radius * Math.cos(startRadians);
+                const startY = centerY + radius * Math.sin(startRadians);
+                const endX = centerX + radius * Math.cos(endRadians);
+                const endY = centerY + radius * Math.sin(endRadians);
+
+                const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+
+                path = `M${startX},${startY} A${radius},${radius} 0 ${largeArcFlag},1 ${endX},${endY}`;
+            }
+
+            return path;
+
+        },
+
+        addPaths() {
+
+        const dynID = 'svgContainer' + this.id
+        const svg = document.getElementById(dynID)
+        
+        this.ring1_items_val.forEach((data, index) => {
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', this.createArc(this.ringDiameter/2, this.ringDiameter/2, (this.ringDiameter/2)-(this.ringThickness/2)-5, data.min, data.max));
+          path.setAttribute('fill', 'transparent');
+          path.setAttribute('id', "curve(" + this.id + ')item_' + index);
+          svg.appendChild(path);
+  
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          const textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
+          textPath.setAttribute('text-anchor', 'middle');
+          textPath.setAttribute('startOffset', '50%')
+          textPath.setAttribute('href', '#curve(' + this.id + ')item_' + index);
+          textPath.setAttribute('fill', 'white');
+          textPath.textContent = data.name;
+          text.appendChild(textPath);
+          svg.appendChild(text);
         });
 
-        //curved text creator
-        const canvas = document.getElementById('ring-text:'+this.id);
-        const context = canvas.getContext("2d");
-
-        const radius = (this.ringDiameter/2) - (this.ringThickness/2);
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const startAngle = -Math.PI / 2;
-
-        const strings = this.ring1_items_val
-
-        const fontSize = 18;
-        const cellPadding = 3; // Adjust the cell padding as needed
-        const anglePerString = (2 * Math.PI) / strings.length;
-
-        context.fillStyle = "white";
-        context.font = `${fontSize}px 'axiforma-bold', sans-serif`;
-        context.textBaseline = "middle";
-        context.textAlign = "center";
-
-        for (let i = 0; i < strings.length; i++) {
-        const string = strings[i].name;
-        const stringWidth = context.measureText(string).width;
-        const cellWidth = stringWidth + 2 * cellPadding;
-        const cellAngle = cellWidth / radius;
-        const stringAngle = startAngle + i * anglePerString;
-        const offsetAngle = (anglePerString - cellAngle) / 2;
-
-        const fixedCharWidth = 1.2; // Adjust the fixed character width as needed
-        const charCount = string.length;
-        const totalCharWidth = charCount * fixedCharWidth;
-        const charAngle = (totalCharWidth + cellPadding) / radius;
-
-        let charOffset = 0;
-        for (let j = 0; j < string.length; j++) {
-            const char = string[j];
-            const angle = stringAngle + offsetAngle + charOffset;
-
-            const x = centerX + Math.cos(angle) * radius;
-            const y = centerY + Math.sin(angle) * radius;
-
-            context.save();
-            context.translate(x, y);
-            context.rotate(angle + Math.PI / 2);
-            context.fillText(char, 0, 0);
-            context.restore();
-
-            charOffset += charAngle;
-        }
-        }
-
-
+      }
 
     }
-}
-</script>
+  };
+  </script>
+  
